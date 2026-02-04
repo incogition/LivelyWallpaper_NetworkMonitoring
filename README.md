@@ -3,8 +3,6 @@ LivelyWallPaper를 활용한 네트워크 모니터링 HTML
 <img width="1317" height="893" alt="image" src="https://github.com/user-attachments/assets/3aae4765-302e-47f8-9329-9d2b5f4693ab" />
 
 
-이미지 속의 사이버펑크틱한 **X-PacketRay Scanner** 대시보드를 GitHub에 멋지게 공유할 수 있도록, 시각적으로 매력적이고 기술적인 디테일이 살아있는 `README.md` 템플릿을 작성해 드립니다.
-
 이 프로젝트의 세련된 UI와 "실시간 트래픽 분석"이라는 컨셉을 강조하는 데 초점을 맞췄습니다.
 
 ---
