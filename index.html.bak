@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>X-PacketRay Scanner // Final Stable</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="hud-cursor">
+
+  <div id="boot"><div class="boot-box"><div id="bootText"></div></div></div>
+  <div class="bg-fx"><div class="grid"></div><div class="scanlines"></div></div>
+
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">X-PR</span>
+        <span class="brand-name">X-PACKETRAY // SECURE MONITOR</span>
+      </div>
+      <nav class="nav" id="main-nav">
+        <a href="#" class="nav-item active" data-target="dashboard">DASHBOARD</a>
+        <a href="#" class="nav-item" data-target="analysis">ANALYSIS</a>
+        <a href="#" class="nav-item" data-target="threats">THREATS</a>
+        <a href="#" class="nav-item" data-target="system">SYSTEM</a>
+      </nav>
+      <div id="clock">00:00:00</div>
+    </header>
+
+    <main class="main-layout" id="main-content"></main>
+
+    <footer class="statusbar">
+      <div class="status-left">ENGINE: <span class="accent">DPDK-ACCEL</span> // TRAFFIC: <span id="bandwidth-val" class="accent" style="color:var(--amber)">0.00</span> Gbps</div>
+      <div class="status-right">NODE: XPR-NODE-01 // SECURITY: <span id="security-status" style="color:var(--cyan)">SECURE</span></div>
+    </footer>
+  </div>
+
+  <div id="cursor"><div class="c-ring"><div class="c-dot"></div></div></div>
+  <script src="script.js"></script>
+</body>
+</html>

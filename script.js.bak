@@ -1,0 +1,189 @@
+const $ = (id) => document.getElementById(id);
+
+// --- 1. 부팅 시퀀스 (더 길고 상세하게) ---
+const bootLines = [
+  "X-PACKETRAY SECURE OS [Version 4.5.0-LTS]",
+  "(c) 2026 X-PR Corp. All rights reserved.",
+  "",
+  "CHECKING HARDWARE INTEGRITY ................... [ OK ]",
+  "INITIALIZING KERNEL MODULES ................... [ OK ]",
+  "SFP28 100G INTERFACE HANDSHAKE ................ [ OK ]",
+  "LOADING FPGA ACCELERATION FABRIC .............. [ OK ]",
+  "CHECKING K3S CLUSTER HEALTH ................... [ OK ]",
+  "LONGHORN STORAGE REPLICA SYNC ................. [ OK ]",
+  "DPI ENGINE v2.8 INITIALIZING .................. [ OK ]",
+  "NTOPNG NETWORK FLOW MONITORING ................ [ OK ]",
+  "SELKS IDS/IPS THREAT SIGNATURES ............... [ OK ]",
+  "READY FOR PRIVILEGED OPERATION."
+];
+
+let bIdx = 0;
+function runBoot() {
+  const bootText = $('bootText');
+  if (bIdx < bootLines.length) {
+    bootText.textContent += bootLines[bIdx] + "\n";
+    bIdx++;
+    setTimeout(runBoot, 50 + Math.random() * 100);
+  } else {
+    setTimeout(() => {
+      $('boot').style.display = 'none';
+      $('app').style.opacity = '1';
+    }, 1000);
+  }
+}
+
+// --- 2. 화면 관리 및 뷰 주입 ---
+let currentView = 'dashboard';
+const mainContent = $('main-content');
+
+const views = {
+  dashboard: () => `
+    <aside class="side-panel">
+      <div class="card">
+        <div class="card-label">Hardware Load Status</div>
+        <div class="metric-group">
+          <div class="m-item">
+            <div class="m-info"><span>CPU UTILIZATION</span><span id="cpu-val">0%</span></div>
+            <div class="m-bar-bg"><div id="cpu-bar" class="m-bar-fill"></div></div>
+          </div>
+          <div class="m-item">
+            <div class="m-info"><span>RAM UTILIZATION</span><span id="ram-val">0%</span></div>
+            <div class="m-bar-bg"><div id="ram-bar" class="m-bar-fill"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card"><div class="card-label">High Load Processes (Top 5)</div><div id="task-list" class="task-container"></div></div>
+    </aside>
+    <section class="card"><div class="card-label">Real-time Deep Packet Inspection Stream</div><div id="log-stream" class="log-container"></div></section>
+  `,
+  analysis: () => `<div class="card single-col"><div class="card-label">Traffic Analysis</div><div style="padding:20px; font-family:monospace; color:var(--cyan)">[ANALYZING PROTOCOL DISTRIBUTION... 98% DONE]</div></div>`,
+  threats: () => `<div class="card single-col"><div class="card-label">Detected Threats</div><div style="padding:20px; color:var(--red)">MALICIOUS_IP_DETECTED: 185.12.4.2 // PORT_SCAN_ATTEMPT</div></div>`,
+  system: () => `<div class="card single-col"><div class="card-label">System Specs</div><div style="padding:20px; font-family:monospace;">Kernel: RT-5.12-XPR // Uptime: 42d 12h</div></div>`
+};
+
+// --- 3. 실시간 통계 및 대역폭 계산 (사용자 요청 사항) ---
+let totalBytes = 0;
+let lastBandwidthUpdate = Date.now();
+
+function calculateBandwidth(packetSize) {
+    totalBytes += packetSize;
+    const now = Date.now();
+    const elapsed = (now - lastBandwidthUpdate) / 1000;
+
+    if (elapsed >= 1) { // 1초마다 하단바 업데이트
+        const gbps = ((totalBytes * 8) / (1024 * 1024 * 1024)).toFixed(2);
+        if ($('bandwidth-val')) $('bandwidth-val').innerText = gbps;
+        
+        // 1초 후 리셋 (실시간 속도 표시)
+        totalBytes = 0;
+        lastBandwidthUpdate = now;
+    }
+}
+
+// --- 4. 패킷 스트림 보강 (색상/디테일/위협 효과) ---
+const protocols = [
+    { name: "TCP", color: "TCP", flags: "ACK,PSH", ports: [80, 443, 8080] },
+    { name: "UDP", color: "UDP", flags: "", ports: [53, 123, 1900] },
+    { name: "TLS1.3", color: "TLS1.3", flags: "HANDSHAKE", ports: [443] },
+    { name: "DNS", color: "DNS", flags: "QUERY", ports: [53] },
+    { name: "HTTP/3", color: "HTTP/3", flags: "QUIC_STREAM", ports: [443] }
+];
+
+function updateLogs() {
+  if (currentView !== 'dashboard') return;
+  const stream = $('log-stream');
+  if (!stream) return;
+
+  const p = protocols[Math.floor(Math.random() * protocols.length)];
+  const packetSize = Math.floor(Math.random() * 1400) + 60;
+  const isThreat = Math.random() > 0.95; // 5% 확률로 위협 발생
+
+  const srcIP = isThreat ? "185.12.4.2" : `${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.1.142`;
+  const dstIP = "10.0.0.42";
+  const sPort = Math.floor(Math.random() * 50000) + 10000;
+  const dPort = p.ports[Math.floor(Math.random() * p.ports.length)];
+
+  calculateBandwidth(packetSize);
+
+  const line = document.createElement('div');
+  line.className = `log-line ${isThreat ? 'is-threat' : ''}`;
+  
+  // 프로토콜 특수문자 처리 (CSS 클래스용)
+  const safeProtoClass = `proto-${p.color.replace(/[./]/g, '\\$&')}`;
+
+  line.innerHTML = `
+    <span class="l-time">${new Date().toLocaleTimeString().split(' ')[1]}</span>
+    <span class="l-proto ${safeProtoClass}">[${p.name}]</span>
+    <span class="l-data">
+        <span class="ip-addr">${srcIP}</span><span class="port">:${sPort}</span> 
+        <span style="color:var(--muted)"> > </span>
+        <span class="ip-addr">${dstIP}</span><span class="port">:${dPort}</span>
+        <span class="flags">${isThreat ? '[THREAT_DETECTED]' : (p.flags ? `[${p.flags}]` : '')}</span>
+    </span>
+    <span class="l-len">${packetSize}B</span>
+  `;
+
+  if (isThreat) {
+      $('security-status').innerText = "ALERT: THREAT DETECTED";
+      $('security-status').style.color = "var(--red)";
+      setTimeout(() => {
+          $('security-status').innerText = "SECURE";
+          $('security-status').style.color = "var(--cyan)";
+      }, 3000);
+  }
+
+  stream.prepend(line);
+  if (stream.children.length > 30) stream.removeChild(stream.lastChild);
+  
+  setTimeout(updateLogs, 100 + Math.random() * 600);
+}
+
+// --- 5. 시스템 데이터 및 초기화 ---
+function updateMonitoringData() {
+  if (currentView !== 'dashboard') return;
+  const cpu = 15 + Math.random() * 40;
+  const ram = 40 + Math.random() * 10;
+  if ($('cpu-val')) $('cpu-val').innerText = `${cpu.toFixed(1)}%`;
+  if ($('cpu-bar')) $('cpu-bar').style.width = `${cpu}%`;
+  if ($('ram-val')) $('ram-val').innerText = `${ram.toFixed(1)}%`;
+  if ($('ram-bar')) $('ram-bar').style.width = `${ram}%`;
+
+  if ($('task-list')) {
+    const list = $('task-list');
+    list.innerHTML = '';
+    const seeds = ["ntopng", "k3s-server", "fluent-bit", "longhorn-mgr", "suricata"];
+    seeds.forEach(name => {
+      const row = document.createElement('div');
+      row.className = 'task-row';
+      row.innerHTML = `<span class="task-name">${name}</span><span class="task-cpu">${(Math.random()*15).toFixed(1)}%</span><span class="task-ram">${(Math.random()*1.5).toFixed(1)}GB</span>`;
+      list.appendChild(row);
+    });
+  }
+}
+
+function init() {
+  mainContent.innerHTML = views.dashboard();
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.onclick = (e) => {
+      document.querySelector('.nav-item.active').classList.remove('active');
+      e.target.classList.add('active');
+      currentView = e.target.dataset.target;
+      mainContent.innerHTML = views[currentView]();
+      if (currentView !== 'dashboard') mainContent.classList.add('single-col');
+      else mainContent.classList.remove('single-col');
+    };
+  });
+
+  setInterval(updateMonitoringData, 1000);
+  setInterval(() => { if($('clock')) $('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
+
+  let mx=0, my=0, cx=0, cy=0;
+  window.onmousemove = (e) => { mx=e.clientX; my=e.clientY; };
+  function moveCursor() { cx+=(mx-cx)*0.15; cy+=(my-cy)*0.15; $('cursor').style.left=cx+'px'; $('cursor').style.top=cy+'px'; requestAnimationFrame(moveCursor); }
+
+  moveCursor();
+  runBoot();
+  updateLogs();
+}
+
+init();

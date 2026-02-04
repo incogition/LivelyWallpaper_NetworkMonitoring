@@ -1,0 +1,87 @@
+:root {
+  --bg: #01080b;
+  --card-bg: rgba(2, 14, 20, 0.8);
+  --fg: #d1f0ff;
+  --muted: #4a636e;
+  --cyan: #00f2ff;
+  --cyan-low: rgba(0, 242, 255, 0.1);
+  --line: rgba(0, 242, 255, 0.15);
+  --amber: #ffcc00;
+  --red: #ff3e3e;
+  --r: 8px;
+}
+
+* { box-sizing: border-box; cursor: none !important; }
+body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: var(--bg); color: var(--fg); font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+
+.bg-fx { position: fixed; inset: 0; z-index: -1; }
+.grid { position: absolute; inset: 0; background: linear-gradient(to right, var(--line) 1px, transparent 1px), linear-gradient(to bottom, var(--line) 1px, transparent 1px); background-size: 50px 50px; opacity: 0.4; }
+.scanlines { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 1px, transparent 2px); opacity: 0.5; }
+
+/* 부팅 박스 */
+#boot { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; align-items: center; justify-content: center; }
+.boot-box { width: 650px; border: 1px solid var(--line); padding: 30px; border-radius: var(--r); background: rgba(0,5,10,0.95); }
+#bootText { color: var(--cyan); font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.5; white-space: pre-wrap; margin: 0; }
+
+/* UI 레이아웃 */
+#app { display: flex; flex-direction: column; height: 100vh; opacity: 0; transition: opacity 1.2s ease; }
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; border-bottom: 1px solid var(--line); background: rgba(1, 12, 18, 0.8); backdrop-filter: blur(10px); }
+.brand-mark { border: 1px solid var(--cyan); padding: 4px 10px; border-radius: 4px; color: var(--cyan); font-weight: 900; }
+.nav { display: flex; gap: 20px; }
+.nav-item { color: var(--muted); text-decoration: none; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; transition: 0.3s; padding: 5px 8px; }
+.nav-item.active, .nav-item:hover { color: var(--cyan); text-shadow: 0 0 10px var(--cyan); background: var(--cyan-low); }
+
+.main-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; flex-grow: 1; padding: 25px; overflow: hidden; }
+.main-layout.single-col { grid-template-columns: 1fr; }
+
+.card { background: var(--card-bg); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; display: flex; flex-direction: column; }
+.card-label { padding: 12px 15px; font-size: 10px; color: var(--cyan); border-bottom: 1px solid var(--line); font-weight: 900; letter-spacing: 2px; text-transform: uppercase; background: rgba(0, 242, 255, 0.03); }
+
+/* 하드웨어 바 */
+.metric-group { padding: 20px; }
+.m-item { margin-bottom: 18px; }
+.m-info { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; color: var(--muted); letter-spacing: 1px; }
+.m-bar-bg { height: 2px; background: rgba(0, 242, 255, 0.05); border-radius: 1px; overflow: hidden; }
+.m-bar-fill { height: 100%; background: var(--cyan); width: 0%; transition: width 0.6s ease; box-shadow: 0 0 8px var(--cyan); }
+
+/* --- 패킷 로그 그리드 및 색상 (사용자 요청 사항) --- */
+.log-container { padding: 10px 0; font-family: 'Consolas', monospace; flex-grow: 1; overflow: hidden; }
+.log-line { 
+    display: grid; 
+    grid-template-columns: 80px 100px 1fr 100px; 
+    padding: 8px 15px; 
+    font-size: 11px; 
+    border-bottom: 1px solid rgba(0, 242, 255, 0.03);
+    align-items: center;
+}
+
+.l-time { color: var(--muted); }
+.l-len { text-align: right; color: var(--cyan); font-weight: bold; }
+
+/* 프로토콜별 색상 */
+.proto-TCP { color: #00f2ff; text-shadow: 0 0 5px rgba(0, 242, 255, 0.5); }
+.proto-UDP { color: #ffcc00; text-shadow: 0 0 5px rgba(255, 204, 0, 0.5); }
+.proto-TLS1\.3, .proto-TLS1\.2 { color: #ff00ff; text-shadow: 0 0 5px rgba(255, 0, 255, 0.5); }
+.proto-DNS { color: #00ff66; text-shadow: 0 0 5px rgba(0, 255, 102, 0.5); }
+.proto-HTTP\/3 { color: #3399ff; }
+.proto-QUIC { color: #ff6600; }
+
+/* 상세 텍스트 색상 */
+.ip-addr { color: #ffffff; }
+.port { color: #5c7a91; font-size: 10px; }
+.flags { color: var(--amber); font-size: 10px; margin-left: 10px; font-weight: bold; }
+
+/* 위협 발견 시 번쩍임 효과 */
+@keyframes threat-flash {
+    0% { background: rgba(255, 62, 62, 0); }
+    50% { background: rgba(255, 62, 62, 0.4); }
+    100% { background: rgba(255, 62, 62, 0); }
+}
+.is-threat { animation: threat-flash 0.4s ease-in-out 3; border-left: 3px solid var(--red); }
+
+/* 하단바 및 커서 */
+.statusbar { padding: 10px 25px; border-top: 1px solid var(--line); font-size: 10px; display: flex; justify-content: space-between; color: var(--muted); }
+.accent { color: var(--cyan); font-weight: 900; }
+#cursor { position: fixed; pointer-events: none; z-index: 10000; transform: translate(-50%, -50%); }
+.c-ring { width: 34px; height: 34px; border: 1px solid var(--cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.6; }
+.c-dot { width: 4px; height: 4px; background: var(--cyan); border-radius: 50%; box-shadow: 0 0 10px var(--cyan); }

@@ -1,0 +1,65 @@
+:root {
+  --bg: #01080b; --card-bg: rgba(2, 14, 20, 0.85); --fg: #d1f0ff;
+  --muted: #4a636e; --cyan: #00f2ff; --cyan-low: rgba(0, 242, 255, 0.1);
+  --line: rgba(0, 242, 255, 0.15); --amber: #ffcc00; --red: #ff3e3e; --r: 8px;
+}
+
+* { box-sizing: border-box; cursor: none !important; }
+body, html { margin: 0; height: 100%; width: 100%; background: var(--bg); color: var(--fg); font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+
+/* 배경 */
+.bg-fx { position: fixed; inset: 0; z-index: -1; }
+.grid { position: absolute; inset: 0; background: linear-gradient(to right, var(--line) 1px, transparent 1px), linear-gradient(to bottom, var(--line) 1px, transparent 1px); background-size: 50px 50px; opacity: 0.4; }
+.scanlines { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 1px, transparent 2px); pointer-events: none; opacity: 0.5; }
+
+/* 부팅 */
+#boot { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; align-items: center; justify-content: center; }
+.boot-box { width: 600px; border: 1px solid var(--line); padding: 25px; border-radius: var(--r); background: rgba(0,5,10,0.95); }
+#bootText { color: var(--cyan); font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.5; white-space: pre-wrap; }
+
+/* 레이아웃 */
+#app { display: flex; flex-direction: column; height: 100vh; opacity: 0; transition: opacity 1.2s ease; }
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; border-bottom: 1px solid var(--line); background: rgba(1, 12, 18, 0.8); backdrop-filter: blur(10px); }
+.brand-mark { border: 1px solid var(--cyan); padding: 4px 10px; border-radius: 4px; color: var(--cyan); font-weight: 900; }
+.nav { display: flex; gap: 15px; }
+.nav-item { color: var(--muted); text-decoration: none; font-size: 11px; letter-spacing: 1px; padding: 5px 8px; transition: 0.3s; }
+.nav-item.active, .nav-item:hover { color: var(--cyan); background: var(--cyan-low); border-radius: 4px; }
+
+.main-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; flex-grow: 1; padding: 20px; overflow: hidden; }
+.main-layout.single-col { grid-template-columns: 1fr; }
+
+/* 카드 및 하드웨어 바 */
+.card { background: var(--card-bg); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; display: flex; flex-direction: column; }
+.card-label { padding: 10px 15px; font-size: 10px; color: var(--cyan); border-bottom: 1px solid var(--line); font-weight: 900; letter-spacing: 2px; text-transform: uppercase; background: rgba(0, 242, 255, 0.03); }
+
+.metric-group { padding: 15px; }
+.m-item { margin-bottom: 15px; }
+.m-info { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; color: var(--muted); }
+.m-bar-bg { height: 2px; background: rgba(0, 242, 255, 0.05); overflow: hidden; }
+.m-bar-fill { height: 100%; background: var(--cyan); width: 0%; transition: width 0.5s; box-shadow: 0 0 10px var(--cyan); }
+
+/* Task List 정렬 해결 */
+.task-container { padding: 5px 0; font-family: 'Consolas', monospace; flex-grow: 1; overflow: hidden; }
+.task-row { display: grid; grid-template-columns: 1fr 60px 80px; padding: 8px 15px; font-size: 11px; border-bottom: 1px solid rgba(0, 242, 255, 0.03); }
+.task-name { color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-cpu { color: var(--cyan); text-align: right; }
+.task-ram { color: var(--amber); text-align: right; }
+
+/* 패킷 로그 및 색상 */
+.log-container { flex-grow: 1; overflow: hidden; padding: 10px; font-family: 'Consolas', monospace; font-size: 11px; line-height: 1.8; }
+.log-line { display: grid; grid-template-columns: 80px 100px 1fr 80px; padding: 4px 10px; border-bottom: 1px solid rgba(255,255,255,0.02); align-items: center; }
+.proto-TCP { color: #00f2ff; } .proto-UDP { color: #ffcc00; } .proto-TLS1\.3 { color: #ff00ff; } .proto-DNS { color: #00ff66; } .proto-HTTP\/3 { color: #3399ff; }
+
+/* 위협 효과 */
+@keyframes threat-flash { 0% { background: transparent; } 50% { background: rgba(255, 62, 62, 0.3); } 100% { background: transparent; } }
+.is-threat { animation: threat-flash 0.4s ease 3; border-left: 3px solid var(--red); }
+
+/* 서브 메뉴 그리드 */
+.grid-content { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 20px; }
+.stat-box { background: var(--cyan-low); border: 1px solid var(--line); padding: 20px; text-align: center; border-radius: 4px; }
+.stat-val { font-size: 22px; color: var(--cyan); font-weight: bold; font-family: monospace; }
+
+.statusbar { padding: 10px 25px; border-top: 1px solid var(--line); font-size: 10px; display: flex; justify-content: space-between; color: var(--muted); }
+#cursor { position: fixed; pointer-events: none; z-index: 10000; transform: translate(-50%, -50%); }
+.c-ring { width: 30px; height: 30px; border: 1px solid var(--cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.6; }
+.c-dot { width: 4px; height: 4px; background: var(--cyan); border-radius: 50%; }

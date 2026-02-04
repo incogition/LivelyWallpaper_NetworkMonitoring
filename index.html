@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>X-PacketRay Scanner // Professional Edition</title>
+    <style>
+        /* === [1. CSS: 하이엔드 하드웨어 모니터 디자인] === */
+        :root {
+            --bg: #01080b; /* 짙은 네이비 블랙 */
+            --card-bg: rgba(2, 14, 20, 0.85);
+            --fg: #d1f0ff;
+            --muted: #4a636e;
+            --cyan: #00f2ff;
+            --cyan-glow: rgba(0, 242, 255, 0.2);
+            --line: rgba(0, 242, 255, 0.15);
+            --amber: #ffcc00;
+            --red: #ff3e3e;
+            --r: 8px;
+        }
+
+        * { box-sizing: border-box; cursor: none !important; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: var(--bg); color: var(--fg); font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+
+        /* 배경 효과: 그리드 & 스캔라인 */
+        .bg-fx { position: fixed; inset: 0; z-index: -1; }
+        .grid { position: absolute; inset: 0; background: linear-gradient(to right, var(--line) 1px, transparent 1px), linear-gradient(to bottom, var(--line) 1px, transparent 1px); background-size: 40px 40px; opacity: 0.5; }
+        .scanlines { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 1px, transparent 2px); opacity: 0.4; }
+
+        /* 부팅 레이어 */
+        #boot { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; align-items: center; justify-content: center; }
+        .boot-box { width: 650px; border: 1px solid var(--line); padding: 30px; border-radius: var(--r); background: rgba(0,5,10,0.95); box-shadow: 0 0 50px rgba(0,242,255,0.1); }
+        #bootText { color: var(--cyan); font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap; margin: 0; }
+
+        /* UI 레이아웃 */
+        #app { display: flex; flex-direction: column; height: 100vh; opacity: 0; transition: opacity 1.5s ease; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; border-bottom: 1px solid var(--line); background: rgba(1, 12, 18, 0.8); backdrop-filter: blur(10px); }
+        .brand-mark { border: 1px solid var(--cyan); padding: 4px 10px; border-radius: 4px; color: var(--cyan); font-weight: 900; letter-spacing: 2px; }
+        .nav { display: flex; gap: 15px; }
+        .nav-item { color: var(--muted); text-decoration: none; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; padding: 8px 12px; transition: 0.3s; border-radius: 4px; }
+        .nav-item.active, .nav-item:hover { color: var(--cyan); background: var(--cyan-glow); }
+        #clock { font-family: monospace; color: var(--cyan); font-size: 14px; }
+
+        /* 대시보드 레이아웃: 2컬럼 */
+        .main-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; flex-grow: 1; padding: 25px; overflow: hidden; }
+        .main-layout.full-view { grid-template-columns: 1fr; }
+
+        /* 카드 & 게이지 */
+        .card { background: var(--card-bg); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; display: flex; flex-direction: column; }
+        .card-label { padding: 12px 15px; font-size: 10px; color: var(--cyan); border-bottom: 1px solid var(--line); font-weight: 900; letter-spacing: 2px; text-transform: uppercase; background: rgba(0, 242, 255, 0.03); }
+
+        .metric-group { padding: 20px; }
+        .m-item { margin-bottom: 20px; }
+        .m-info { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 8px; color: var(--muted); letter-spacing: 1px; }
+        .m-bar-bg { height: 2px; background: rgba(0, 242, 255, 0.05); border-radius: 1px; overflow: hidden; }
+        .m-bar-fill { height: 100%; background: var(--cyan); width: 0%; transition: width 0.6s ease; box-shadow: 0 0 10px var(--cyan); }
+
+        /* TaskList 그리드 정렬 (글자 안나오는 문제 해결) */
+        .task-container { padding: 5px 0; font-family: 'Consolas', monospace; flex-grow: 1; overflow: hidden; }
+        .task-row { display: grid; grid-template-columns: 1fr 60px 80px; padding: 10px 15px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 11px; }
+        .task-name { color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold; }
+        .task-cpu { color: var(--cyan); text-align: right; }
+        .task-ram { color: var(--amber); text-align: right; }
+
+        /* 패킷 스트림 (다양한 색상 및 그리드 정렬) */
+        .log-container { flex-grow: 1; overflow: hidden; padding: 15px; font-family: 'Consolas', monospace; font-size: 11px; line-height: 1.8; }
+        .log-line { display: grid; grid-template-columns: 80px 90px 1fr 90px; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.02); padding: 5px 0; align-items: center; }
+        
+        .proto-TCP { color: #00f2ff; } .proto-UDP { color: #ffcc00; } .proto-TLS1\.3 { color: #ff00ff; }
+        .proto-DNS { color: #00ff66; } .proto-HTTP\/3 { color: #3399ff; } .proto-QUIC { color: #ff6600; }
+
+        /* 위협 탐지 번쩍임 */
+        @keyframes flash-red { 0% { background: transparent; } 50% { background: rgba(255, 62, 62, 0.3); } 100% { background: transparent; } }
+        .is-threat { animation: flash-red 0.4s ease 3; border-left: 3px solid var(--red); }
+
+        /* 서브메뉴 통계 그리드 */
+        .sub-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 20px; }
+        .stat-box { background: var(--cyan-low); border: 1px solid var(--line); padding: 20px; text-align: center; border-radius: 4px; }
+        .stat-val { font-size: 22px; color: var(--cyan); font-weight: bold; font-family: monospace; }
+
+        /* HUD 커서 & 상태바 */
+        #cursor { position: fixed; pointer-events: none; z-index: 10000; transform: translate(-50%, -50%); }
+        .c-ring { width: 34px; height: 34px; border: 1px solid var(--cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.6; }
+        .c-dot { width: 4px; height: 4px; background: var(--cyan); border-radius: 50%; box-shadow: 0 0 10px var(--cyan); }
+        .statusbar { padding: 10px 30px; border-top: 1px solid var(--line); font-size: 10px; display: flex; justify-content: space-between; color: var(--muted); letter-spacing: 1px; }
+        .accent { color: var(--cyan); font-weight: bold; }
+    </style>
+</head>
+<body class="hud-cursor">
+
+    <div id="boot"><div class="boot-box"><pre id="bootText"></pre></div></div>
+    <div class="bg-fx"><div class="grid"></div><div class="scanlines"></div></div>
+
+    <div id="app">
+        <header class="topbar">
+            <div class="brand"><span class="brand-mark">X-PR</span><span style="font-size:12px; margin-left:10px; color:var(--muted)">TRAFFIC ANALYZER</span></div>
+            <nav class="nav" id="main-nav">
+                <a href="#" class="nav-item active" data-target="dashboard">DASHBOARD</a>
+                <a href="#" class="nav-item" data-target="analysis">ANALYSIS</a>
+                <a href="#" class="nav-item" data-target="threats">THREATS</a>
+                <a href="#" class="nav-item" data-target="system">SYSTEM</a>
+            </nav>
+            <div id="clock">00:00:00</div>
+        </header>
+
+        <main class="main-layout" id="main-content"></main>
+
+        <footer class="statusbar">
+            <div>NODE: XPR-SCAN-01 // TRAFFIC: <span id="bw-val" class="accent" style="color:var(--amber)">0.00</span> Gbps</div>
+            <div>STATUS: <span id="security-status" class="accent">SECURE</span> // KERNEL: OPTIMIZED-RT</div>
+        </footer>
+    </div>
+
+    <div id="cursor"><div class="c-ring"><div class="c-dot"></div></div></div>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+
+        // === [2. JavaScript: 데이터 유지 및 실시간 엔진] ===
+
+        // 부팅 시퀀스: 인프라 및 프로젝트 명칭 반영
+        const bootLines = [
+            "X-PACKETRAY SECURE OS [Version 4.5.0-STABLE]",
+            "(c) 2026 X-PR Corp. All rights reserved.",
+            "",
+            "CHECKING HARDWARE INTEGRITY ................... [ OK ]",
+            "SFP28 100G INTERFACE HANDSHAKE ................ [ OK ]",
+            "LOADING FPGA ACCELERATION FABRIC .............. [ OK ]",
+            "MOUNTING NVME STORAGE ARRAY (Longhorn) ........ [ OK ]",
+            "INITIALIZING K3S CLUSTER CONTROL PLANE ........ [ OK ]",
+            "DPDK KERNEL STACK BYPASS ...................... [ OK ]",
+            "NTOPNG FLOW MONITORING ENGINE ................. [ OK ]",
+            "FLUENT-BIT LOG AGGREGATION SYSTEM ............. [ OK ]",
+            "SELKS/SURICATA IDS SIGNATURE SYNC ............. [ OK ]",
+            "CISCO FABRIC INTERCONNECT SYNC ................ [ OK ]",
+            "KC CERTIFICATION (DT241M) HANDSHAKE ........... [ OK ]",
+            "LINGUISTIC NUANCE ENGINE (EN-Memorize) ........ [ OK ]",
+            "",
+            "SYSTEM STATUS: OPTIMAL // SCANNING: ACTIVE",
+            "WELCOME, PRIVILEGED OPERATOR."
+        ];
+
+        let bIdx = 0;
+        function runBoot() {
+            const el = $('bootText');
+            if (bIdx < bootLines.length) {
+                el.textContent += bootLines[bIdx] + "\n";
+                bIdx++;
+                setTimeout(runBoot, 50 + Math.random() * 100);
+            } else {
+                setTimeout(() => {
+                    $('boot').style.display = 'none';
+                    $('app').style.opacity = '1';
+                }, 800);
+            }
+        }
+
+        // 전역 상태: 탭 이동 시에도 패킷 데이터를 잃지 않음
+        let packetHistory = [];
+        let currentView = 'dashboard';
+        let totalBytes = 0;
+
+        const views = {
+            dashboard: () => `
+                <aside class="side-panel">
+                    <div class="card">
+                        <div class="card-label">Hardware Load Status</div>
+                        <div class="metric-group">
+                            <div class="m-item"><div class="m-info"><span>CPU UTILIZATION</span><span id="cpu-val">0%</span></div><div class="m-bar-bg"><div id="cpu-bar" class="m-bar-fill"></div></div></div>
+                            <div class="m-item"><div class="m-info"><span>RAM ALLOCATION</span><span id="ram-val">0%</span></div><div class="m-bar-bg"><div id="ram-bar" class="m-bar-fill"></div></div></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">High Load Processes (Top 7)</div>
+                        <div id="task-list" class="task-container"></div>
+                    </div>
+                </aside>
+                <section class="card"><div class="card-label">Real-time Deep Packet Inspection Stream</div><div id="log-stream" class="log-container"></div></section>
+            `,
+            analysis: () => `
+                <div class="card single-col"><div class="card-label">Network Traffic Analytics</div>
+                    <div class="sub-grid">
+                        <div class="stat-box"><div style="font-size:10px; color:var(--muted)">TCP/HTTP3</div><div class="stat-val">64.2%</div></div>
+                        <div class="stat-box"><div style="font-size:10px; color:var(--muted)">TLS 1.3</div><div class="stat-val">28.4%</div></div>
+                        <div class="stat-box"><div style="font-size:10px; color:var(--muted)">LATENCY (AVG)</div><div class="stat-val">0.12ms</div></div>
+                        <div class="stat-box"><div style="font-size:10px; color:var(--muted)">ACTIVE FLOWS</div><div class="stat-val">4,281</div></div>
+                        <div class="stat-box"><div style="font-size:10px; color:var(--muted)">DPI HIT RATE</div><div class="stat-val">99.8%</div></div>
+                        <div class="stat-box"><div style="font-size:10px; color:var(--muted)">PACKET LOSS</div><div class="stat-val">0.00%</div></div>
+                    </div>
+                </div>`,
+            threats: () => `
+                <div class="card single-col"><div class="card-label">Detected Anomalies & Threats</div>
+                    <div style="padding:20px;">
+                        <div style="padding:15px; background:rgba(255,62,62,0.1); border:1px solid var(--red); margin-bottom:12px;">
+                            <b style="color:var(--red)">CRITICAL: SQL INJECTION ATTEMPT</b><br><small style="color:var(--muted)">SRC: 185.12.4.2 | TARGET: SQL_PROD_01 | STATUS: BLOCKED</small>
+                        </div>
+                        <div style="padding:15px; background:rgba(255,204,0,0.1); border:1px solid var(--amber); margin-bottom:12px;">
+                            <b style="color:var(--amber)">WARNING: BRUTE FORCE DETECTED</b><br><small style="color:var(--muted)">SRC: 42.112.9.22 | ATTEMPTS: 142 | STATUS: MONITORING</small>
+                        </div>
+                    </div>
+                </div>`,
+            system: () => `
+                <div class="card single-col"><div class="card-label">Infrastructure Diagnostics</div>
+                    <div class="sub-grid">
+                        <div class="stat-box"><div style="font-size:10px; color:var(--muted)">K3S CLUSTER</div><div class="stat-val" style="font-size:16px;">3 NODES [HEALTHY]</div></div>
+                        <div class="stat-box"><div style="font-size:10px; color:var(--muted)">LONGHORN STORAGE</div><div class="stat-val" style="font-size:16px;">REPLICATED OK</div></div>
+                        <div class="stat-box"><div style="font-size:10px; color:var(--muted)">UPTIME</div><div class="stat-val" style="font-size:16px;">42d 12h 04m</div></div>
+                    </div>
+                </div>`
+        };
+
+        // 네비게이션 처리
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.onclick = (e) => {
+                document.querySelector('.nav-item.active').classList.remove('active');
+                e.target.classList.add('active');
+                currentView = e.target.dataset.target;
+                $('main-content').innerHTML = views[currentView]();
+                if (currentView !== 'dashboard') $('main-content').classList.add('full-view');
+                else { $('main-content').classList.remove('full-view'); refreshPacketUI(); }
+            };
+        });
+
+        // 실시간 시스템 데이터 주입 (ntopng, k3s 등 반영)
+        function updateSystemData(data) {
+            if (currentView !== 'dashboard') return;
+            const stats = data ? JSON.parse(data) : { 
+                CurrentCpu: 20 + Math.random() * 40, 
+                CurrentRamAvail: 4500, TotalRam: 16000,
+                TopProcess: [
+                    {Name:"ntopng", Cpu:15.2, Ram:1.2}, {Name:"k3s-server", Cpu:8.4, Ram:0.9},
+                    {Name:"fluent-bit", Cpu:4.1, Ram:0.3}, {Name:"longhorn-mgr", Cpu:2.8, Ram:1.1},
+                    {Name:"suricata", Cpu:1.5, Ram:1.4}, {Name:"postgresql", Cpu:1.1, Ram:2.1},
+                    {Name:"kube-proxy", Cpu:0.8, Ram:0.2}
+                ]
+            };
+
+            const cpu = stats.CurrentCpu;
+            const ram = (1 - (stats.CurrentRamAvail / stats.TotalRam)) * 100;
+
+            if($('cpu-val')) { $('cpu-val').innerText = `${cpu.toFixed(1)}%`; $('cpu-bar').style.width = `${cpu}%`; }
+            if($('ram-val')) { $('ram-val').innerText = `${ram.toFixed(1)}%`; $('ram-bar').style.width = `${ram}%`; }
+
+            const tList = $('task-list');
+            if(tList && stats.TopProcess) {
+                tList.innerHTML = '';
+                stats.TopProcess.forEach(p => {
+                    tList.innerHTML += `<div class="task-row"><span class="task-name">${p.Name}</span><span class="task-cpu">${(p.Cpu + Math.random()).toFixed(1)}%</span><span class="task-ram">${p.Ram.toFixed(1)}GB</span></div>`;
+                });
+            }
+        }
+
+        // 패킷 로직 (다양한 색상 및 위협 효과)
+        const protocols = [
+            {n:"TCP", c:"TCP", p:[80, 443, 8080]}, {n:"UDP", c:"UDP", p:[53, 123]}, 
+            {n:"TLS1.3", c:"TLS1\.3", p:[443]}, {n:"DNS", c:"DNS", p:[53]}, {n:"HTTP/3", c:"HTTP\/3", p:[443]}
+        ];
+
+        function createPacket() {
+            const p = protocols[Math.floor(Math.random() * protocols.length)];
+            const size = Math.floor(Math.random() * 1400) + 60;
+            const isThreat = Math.random() > 0.96;
+            const data = {
+                time: new Date().toLocaleTimeString().split(' ')[1],
+                proto: p.n,
+                pClass: `proto-${p.c}`,
+                src: isThreat ? "185.12.4.2" : `${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.1.142`,
+                dst: "10.0.0.42",
+                port: p.p[Math.floor(Math.random()*p.p.length)],
+                len: size,
+                threat: isThreat
+            };
+            packetHistory.unshift(data);
+            if (packetHistory.length > 30) packetHistory.pop();
+            if (currentView === 'dashboard') renderPacketRow(data);
+            totalBytes += size;
+            
+            if(isThreat) {
+                $('security-status').innerText = "ALERT: THREAT DETECTED";
+                $('security-status').style.color = "var(--red)";
+                setTimeout(() => { $('security-status').innerText = "SECURE"; $('security-status').style.color = "var(--cyan)"; }, 3000);
+            }
+        }
+
+        function renderPacketRow(data) {
+            const stream = $('log-stream');
+            if(!stream) return;
+            const row = document.createElement('div');
+            row.className = `log-line ${data.threat ? 'is-threat' : ''}`;
+            row.innerHTML = `
+                <span class="l-time">${data.time}</span>
+                <span class="l-proto ${data.pClass}">[${data.proto}]</span>
+                <span class="l-data">${data.src} > ${data.dst}:${data.port} ${data.threat ? '<b style="color:var(--red)">[MALWARE_DETECTED]</b>' : ''}</span>
+                <span class="l-len">${data.len}B</span>
+            `;
+            stream.prepend(row);
+            if (stream.children.length > 25) stream.removeChild(stream.lastChild);
+        }
+
+        function refreshPacketUI() {
+            const stream = $('log-stream');
+            if(!stream) return;
+            stream.innerHTML = '';
+            [...packetHistory].reverse().forEach(p => renderPacketRow(p));
+        }
+
+        // 초기화 루프
+        function init() {
+            $('main-content').innerHTML = views.dashboard();
+            runBoot();
+            setInterval(() => updateSystemData(null), 1000);
+            setInterval(createPacket, 800);
+            setInterval(() => {
+                const gbps = ((totalBytes * 8) / (1024*1024*1024)).toFixed(2);
+                if($('bw-val')) $('bw-val').innerText = gbps;
+                totalBytes = 0;
+            }, 1000);
+            setInterval(() => { if($('clock')) $('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
+
+            window.onmousemove = (e) => { $('cursor').style.left = e.clientX+'px'; $('cursor').style.top = e.clientY+'px'; };
+        }
+
+        // Lively API 연동
+        window.livelySystemInformation = (data) => updateSystemData(data);
+
+        init();
+    </script>
+</body>
+</html>
