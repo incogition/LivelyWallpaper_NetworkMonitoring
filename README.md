@@ -3,9 +3,6 @@ LivelyWallPaper를 활용한 네트워크 모니터링 HTML
 <img width="1317" height="893" alt="image" src="https://github.com/user-attachments/assets/3aae4765-302e-47f8-9329-9d2b5f4693ab" />
 
 
-사용자가 업무 환경에 맞춰 즉시 수정하고 활용할 수 있도록, **핵심 기능**과 **실무 커스터마이징 가이드**를 중심으로 정돈된 `README.md` 최종본입니다.
-
---
 
 ## ✨ Key Features (핵심 기능)
 
@@ -63,11 +60,5 @@ LivelyWallPaper를 활용한 네트워크 모니터링 HTML
 2. 이 저장소의 파일을 다운로드한 후 `index.html`을 Lively 라이브러리에 드래그 앤 드롭합니다.
 3. Lively 설정에서 **'시스템 정보(System Information)'** 접근 권한을 허용하면 실제 하드웨어 데이터와 동기화됩니다.
 
----
 
-**Developed with 💻 by [Your GitHub ID]**
-*본 프로젝트는 실무적인 네트워크 보안 관제 환경의 시각적 경험을 위해 설계되었습니다.*
 
----
-
-**혹시 이 대시보드에 실제 네트워크 어댑터의 트래픽 양을 실시간으로 가져와 Gbps 단위로 표시하는 구체적인 스크립트 보완이 필요하신가요?**
