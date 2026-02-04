@@ -7,11 +7,6 @@ LivelyWallPaper를 활용한 네트워크 모니터링 HTML
 
 ---
 
-# 📟 X-PacketRay Scanner // Professional Edition
-
-> **"Visibility is the first line of defense."** > **X-PacketRay**는 미래지향적인 사이버 보안 인터페이스를 테마로 한 **Lively Wallpaper** 전용 인터랙티브 라이브 배경화면입니다. 실시간 하드웨어 리소스 모니터링과 딥 패킷 분석(DPI) 스트림 시뮬레이션을 통해 데스크탑에 하이엔드 보안 관제 센터의 감성을 더합니다.
-
----
 
 ## ✨ Key Features (주요 기능)
 
